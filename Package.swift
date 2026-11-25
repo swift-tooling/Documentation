@@ -25,11 +25,11 @@ let package = Package(
             branch: "master"
         ),
         .package(
-            url: "https://github.com/leviouwendijk/DSL.git",
+            url: "https://github.com/swift-dsl/DSL.git",
             branch: "master"
         ),
         .package(
-            url: "https://github.com/leviouwendijk/Parsers.git",
+            url: "https://github.com/swift-langs/Parsers.git",
             branch: "master"
         ),
         .package(
