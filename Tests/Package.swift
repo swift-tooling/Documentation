@@ -17,7 +17,7 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/leviouwendijk/TestFlows.git",
+            url: "https://github.com/swift-tooling/TestFlows.git",
             branch: "master"
         ),
         .package(
