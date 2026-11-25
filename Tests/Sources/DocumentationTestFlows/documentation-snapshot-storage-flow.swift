@@ -1,4 +1,4 @@
-import Documentation
+@_spi(Testing) import Documentation
 import Foundation
 import TestFlows
 
@@ -334,9 +334,124 @@ private func makeDocumentationStorageSnapshot(
                         ]
                     ),
                 ],
-                content: .paragraph(
+                content: .collection(
                     [
-                        .text("Package overview."),
+                        .paragraph(
+                            [
+                                .text("Package overview."),
+                            ]
+                        ),
+                        .heading(
+                            level: 2,
+                            anchor: .init(
+                                rawValue: "usage"
+                            ),
+                            content: [
+                                .text("Usage"),
+                            ]
+                        ),
+                        .paragraph(
+                            [
+                                .link(
+                                    target: .external(
+                                        "https://example.com"
+                                    ),
+                                    content: [
+                                        .text("site"),
+                                    ]
+                                ),
+                                .link(
+                                    target: .page(
+                                        .init(
+                                            rawValue: "guide"
+                                        ),
+                                        anchor: .init(
+                                            rawValue: "start"
+                                        )
+                                    ),
+                                    content: [
+                                        .text("guide"),
+                                    ]
+                                ),
+                                .link(
+                                    target: .anchor(
+                                        .init(
+                                            rawValue: "usage"
+                                        )
+                                    ),
+                                    content: [
+                                        .text("usage"),
+                                    ]
+                                ),
+                                .link(
+                                    target: .asset(
+                                        .init(
+                                            rawValue: "diagram"
+                                        )
+                                    ),
+                                    content: [
+                                        .text("diagram"),
+                                    ]
+                                ),
+                                .citation(
+                                    key: .init(
+                                        rawValue: "source2019"
+                                    ),
+                                    locators: [
+                                        .page(
+                                            "12"
+                                        ),
+                                    ]
+                                ),
+                                .footnote(
+                                    .paragraph(
+                                        [
+                                            .text("A note."),
+                                        ]
+                                    )
+                                ),
+                            ]
+                        ),
+                        .image(
+                            asset: .init(
+                                rawValue: "diagram"
+                            ),
+                            alt: "A diagram."
+                        ),
+                        .definitions(
+                            [
+                                .init(
+                                    term: [
+                                        .text("Term"),
+                                    ],
+                                    description: .paragraph(
+                                        [
+                                            .text("Meaning."),
+                                        ]
+                                    )
+                                ),
+                            ]
+                        ),
+                        .listing(
+                            .bibliography
+                        ),
+                        .listing(
+                            .footnotes
+                        ),
+                        .listing(
+                            .contents
+                        ),
+                        .native(
+                            target: .html,
+                            key: .init(
+                                rawValue: "demo-widget"
+                            ),
+                            fallback: .paragraph(
+                                [
+                                    .text("Open on the website."),
+                                ]
+                            )
+                        ),
                     ]
                 )
             )

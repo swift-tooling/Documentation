@@ -1,5 +1,5 @@
-package enum DocumentationRepositoryDeriver {
-    package static func derive(
+@_spi(Testing) public enum DocumentationRepositoryDeriver {
+    @_spi(Testing) public static func derive(
         _ inspection: DocumentationRepositoryInspection,
         from materialization: DocumentationMaterialization,
         toolchain: DocumentationToolchainIdentity,

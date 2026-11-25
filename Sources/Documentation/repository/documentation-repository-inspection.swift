@@ -1,12 +1,12 @@
 import Executable
 
-package struct DocumentationRepositoryInspection:
+@_spi(Testing) public struct DocumentationRepositoryInspection:
     Sendable
 {
-    package let manifest: SwiftPackageManifest
-    package let symbolGraphs: SwiftSymbolGraphDump
+    @_spi(Testing) public let manifest: SwiftPackageManifest
+    @_spi(Testing) public let symbolGraphs: SwiftSymbolGraphDump
 
-    package init(
+    @_spi(Testing) public init(
         manifest: SwiftPackageManifest,
         symbolGraphs: SwiftSymbolGraphDump
     ) {
@@ -15,8 +15,8 @@ package struct DocumentationRepositoryInspection:
     }
 }
 
-package enum DocumentationRepositoryInspector {
-    package static func inspect(
+@_spi(Testing) public enum DocumentationRepositoryInspector {
+    @_spi(Testing) public static func inspect(
         _ materialization: DocumentationMaterialization,
         minimumAccessLevel: SwiftSymbolGraphAccessLevel = .public
     ) async throws -> DocumentationRepositoryInspection {

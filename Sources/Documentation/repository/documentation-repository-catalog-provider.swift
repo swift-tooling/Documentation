@@ -39,7 +39,7 @@ public struct DocumentationRepositoryCatalogProvider:
         }
     }
 
-    package func refresh(
+    @_spi(Testing) public func refresh(
         _ repositories: [DocumentationRepository],
         toolchain: DocumentationToolchainIdentity,
         importerVersion: DocumentationImporterVersion = .current,

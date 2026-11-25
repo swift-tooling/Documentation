@@ -3,14 +3,14 @@ import Foundation
 import ParsersStructuredContent
 import SymbolKit
 
-package struct DocumentationSymbolGraphImport:
+@_spi(Testing) public struct DocumentationSymbolGraphImport:
     Sendable,
     Hashable
 {
-    package let collection: DocumentationCollection
-    package let moduleNames: [String]
+    @_spi(Testing) public let collection: DocumentationCollection
+    @_spi(Testing) public let moduleNames: [String]
 
-    package init(
+    @_spi(Testing) public init(
         collection: DocumentationCollection,
         moduleNames: [String]
     ) {
@@ -19,8 +19,8 @@ package struct DocumentationSymbolGraphImport:
     }
 }
 
-package enum DocumentationSymbolGraphImporter {
-    package static func importGraph(
+@_spi(Testing) public enum DocumentationSymbolGraphImporter {
+    @_spi(Testing) public static func importGraph(
         from dump: SwiftSymbolGraphDump,
         identity: DocumentationIdentity,
         title: String,

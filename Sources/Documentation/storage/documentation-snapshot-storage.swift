@@ -238,7 +238,7 @@ public struct DocumentationSnapshotStore:
         )
     }
 
-    package func fileURL(
+    @_spi(Testing) public func fileURL(
         for identity: DocumentationSnapshotIdentity
     ) -> URL {
         snapshotDirectory
@@ -939,6 +939,13 @@ private struct DocumentationStructuredContentRecord:
     let listStyle: String?
     let role: String?
     let title: [DocumentationStructuredContentInlineRecord]?
+    let level: Int?
+    let anchor: String?
+    let asset: String?
+    let alt: String?
+    let listing: String?
+    let target: String?
+    let key: String?
 
     init(
         kind: String,
@@ -948,7 +955,14 @@ private struct DocumentationStructuredContentRecord:
         source: String? = nil,
         listStyle: String? = nil,
         role: String? = nil,
-        title: [DocumentationStructuredContentInlineRecord]? = nil
+        title: [DocumentationStructuredContentInlineRecord]? = nil,
+        level: Int? = nil,
+        anchor: String? = nil,
+        asset: String? = nil,
+        alt: String? = nil,
+        listing: String? = nil,
+        target: String? = nil,
+        key: String? = nil
     ) {
         self.kind = kind
         self.children = children
@@ -958,6 +972,13 @@ private struct DocumentationStructuredContentRecord:
         self.listStyle = listStyle
         self.role = role
         self.title = title
+        self.level = level
+        self.anchor = anchor
+        self.asset = asset
+        self.alt = alt
+        self.listing = listing
+        self.target = target
+        self.key = key
     }
 
     init(
@@ -1049,6 +1070,76 @@ private struct DocumentationStructuredContentRecord:
                         )
                     )
                 }
+            )
+
+        case .heading(let level, let anchor, let content):
+            self.init(
+                kind: "heading",
+                inline: content.map {
+                    .init(
+                        $0
+                    )
+                },
+                level: level,
+                anchor: anchor?.rawValue
+            )
+
+        case .image(let asset, let alt):
+            self.init(
+                kind: "image",
+                asset: asset.rawValue,
+                alt: alt
+            )
+
+        case .definitions(let definitions):
+            self.init(
+                kind: "definitions",
+                children: definitions.map {
+                    .init(
+                        kind: "definition",
+                        children: [
+                            .init(
+                                $0.description
+                            ),
+                        ],
+                        title: $0.term.map {
+                            .init(
+                                $0
+                            )
+                        }
+                    )
+                }
+            )
+
+        case .listing(let listing):
+            let name: String
+
+            switch listing {
+            case .bibliography:
+                name = "bibliography"
+
+            case .footnotes:
+                name = "footnotes"
+
+            case .contents:
+                name = "contents"
+            }
+
+            self.init(
+                kind: "listing",
+                listing: name
+            )
+
+        case .native(let target, let key, let fallback):
+            self.init(
+                kind: "native",
+                children: [
+                    .init(
+                        fallback
+                    ),
+                ],
+                target: target.rawValue,
+                key: key.rawValue
             )
         }
     }
@@ -1179,6 +1270,112 @@ private struct DocumentationStructuredContentRecord:
                 )
             )
 
+        case "heading":
+            guard let level else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "heading requires level"
+                    )
+            }
+
+            return .heading(
+                level: level,
+                anchor: anchor.map {
+                    StructuredContent.AnchorKey(
+                        rawValue: $0
+                    )
+                },
+                content: try (inline ?? []).map {
+                    try $0.semantic()
+                }
+            )
+
+        case "image":
+            guard let asset, let alt else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "image requires asset and alt"
+                    )
+            }
+
+            return .image(
+                asset: StructuredContent.AssetKey(
+                    rawValue: asset
+                ),
+                alt: alt
+            )
+
+        case "definitions":
+            return .definitions(
+                try (children ?? []).map { definition in
+                    guard
+                        definition.kind == "definition",
+                        let description = definition.children?.first,
+                        definition.children?.count == 1
+                    else {
+                        throw DocumentationSnapshotStorageError
+                            .invalidStructuredContentShape(
+                                "definition requires exactly one description"
+                            )
+                    }
+
+                    return StructuredContent.Definition(
+                        term: try (definition.title ?? []).map {
+                            try $0.semantic()
+                        },
+                        description: try description.semantic()
+                    )
+                }
+            )
+
+        case "listing":
+            switch listing {
+            case "bibliography":
+                return .listing(
+                    .bibliography
+                )
+
+            case "footnotes":
+                return .listing(
+                    .footnotes
+                )
+
+            case "contents":
+                return .listing(
+                    .contents
+                )
+
+            default:
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "listing requires bibliography, footnotes or contents"
+                    )
+            }
+
+        case "native":
+            guard
+                let target,
+                let key,
+                let children,
+                children.count == 1,
+                let fallback = children.first
+            else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "native requires target, key and exactly one fallback"
+                    )
+            }
+
+            return .native(
+                target: StructuredContent.NativeTarget(
+                    rawValue: target
+                ),
+                key: StructuredContent.NativeKey(
+                    rawValue: key
+                ),
+                fallback: try fallback.semantic()
+            )
+
         default:
             throw DocumentationSnapshotStorageError
                 .invalidStructuredContentKind(
@@ -1194,15 +1391,30 @@ private struct DocumentationStructuredContentInlineRecord:
     let kind: String
     let text: String?
     let children: [DocumentationStructuredContentInlineRecord]?
+    let target: String?
+    let anchor: String?
+    let key: String?
+    let locators: [ReferenceLocator]?
+    let blocks: [DocumentationStructuredContentRecord]?
 
     init(
         kind: String,
         text: String? = nil,
-        children: [DocumentationStructuredContentInlineRecord]? = nil
+        children: [DocumentationStructuredContentInlineRecord]? = nil,
+        target: String? = nil,
+        anchor: String? = nil,
+        key: String? = nil,
+        locators: [ReferenceLocator]? = nil,
+        blocks: [DocumentationStructuredContentRecord]? = nil
     ) {
         self.kind = kind
         self.text = text
         self.children = children
+        self.target = target
+        self.anchor = anchor
+        self.key = key
+        self.locators = locators
+        self.blocks = blocks
     }
 
     init(
@@ -1239,6 +1451,65 @@ private struct DocumentationStructuredContentInlineRecord:
                         $0
                     )
                 }
+            )
+
+        case .link(let target, let children):
+            let content = children.map {
+                DocumentationStructuredContentInlineRecord(
+                    $0
+                )
+            }
+
+            switch target {
+            case .page(let page, let anchor):
+                self.init(
+                    kind: "link",
+                    text: page.rawValue,
+                    children: content,
+                    target: "page",
+                    anchor: anchor?.rawValue
+                )
+
+            case .anchor(let anchor):
+                self.init(
+                    kind: "link",
+                    children: content,
+                    target: "anchor",
+                    anchor: anchor.rawValue
+                )
+
+            case .asset(let asset):
+                self.init(
+                    kind: "link",
+                    text: asset.rawValue,
+                    children: content,
+                    target: "asset"
+                )
+
+            case .external(let url):
+                self.init(
+                    kind: "link",
+                    text: url,
+                    children: content,
+                    target: "external"
+                )
+            }
+
+        case .citation(let key, let locators):
+            self.init(
+                kind: "citation",
+                key: key.rawValue,
+                locators: locators
+            )
+
+        case .footnote(let content):
+            self.init(
+                kind: "footnote",
+                blocks: [
+                    .init(
+                        content
+                    ),
+                ]
             )
         }
     }
@@ -1283,10 +1554,120 @@ private struct DocumentationStructuredContentInlineRecord:
                 }
             )
 
+        case "link":
+            let content = try (children ?? []).map {
+                try $0.semantic()
+            }
+
+            return .link(
+                target: try linkTarget(),
+                content: content
+            )
+
+        case "citation":
+            guard let key else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "citation requires key"
+                    )
+            }
+
+            return .citation(
+                key: StructuredContent.CitationKey(
+                    rawValue: key
+                ),
+                locators: locators ?? []
+            )
+
+        case "footnote":
+            guard
+                let blocks,
+                blocks.count == 1,
+                let content = blocks.first
+            else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "footnote requires exactly one block"
+                    )
+            }
+
+            return .footnote(
+                try content.semantic()
+            )
+
         default:
             throw DocumentationSnapshotStorageError
                 .invalidStructuredContentInlineKind(
                     kind
+                )
+        }
+    }
+
+    private func linkTarget() throws -> StructuredContent.LinkTarget {
+        switch target {
+        case "page":
+            guard let text else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "page link requires a page"
+                    )
+            }
+
+            return .page(
+                StructuredContent.PageKey(
+                    rawValue: text
+                ),
+                anchor: anchor.map {
+                    StructuredContent.AnchorKey(
+                        rawValue: $0
+                    )
+                }
+            )
+
+        case "anchor":
+            guard let anchor else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "anchor link requires an anchor"
+                    )
+            }
+
+            return .anchor(
+                StructuredContent.AnchorKey(
+                    rawValue: anchor
+                )
+            )
+
+        case "asset":
+            guard let text else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "asset link requires an asset"
+                    )
+            }
+
+            return .asset(
+                StructuredContent.AssetKey(
+                    rawValue: text
+                )
+            )
+
+        case "external":
+            guard let text else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "external link requires a URL"
+                    )
+            }
+
+            return .external(
+                text
+            )
+
+        default:
+            throw DocumentationSnapshotStorageError
+                .invalidStructuredContentShape(
+                    "link requires page, anchor, asset or external target"
                 )
         }
     }

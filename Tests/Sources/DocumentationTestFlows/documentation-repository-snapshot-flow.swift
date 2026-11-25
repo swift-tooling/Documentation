@@ -1,4 +1,4 @@
-import Documentation
+@_spi(Testing) import Documentation
 import Foundation
 import Interfaces
 import TestFlows

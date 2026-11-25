@@ -51,7 +51,7 @@ public struct DocumentationRepositorySnapshotProvider:
         }
     }
 
-    package func snapshot(
+    @_spi(Testing) public func snapshot(
         for repository: DocumentationRepository,
         toolchain: DocumentationToolchainIdentity,
         importerVersion: DocumentationImporterVersion = .current,
@@ -171,7 +171,7 @@ public struct DocumentationRepositorySnapshotProvider:
         return snapshot
     }
 
-    package func repositoryRoot(
+    @_spi(Testing) public func repositoryRoot(
         for repository: DocumentationRepository
     ) -> URL {
         repositoriesRoot
