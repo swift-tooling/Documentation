@@ -17,7 +17,7 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/leviouwendijk/Interfaces.git",
+            url: "https://github.com/swift-lco/Interfaces.git",
             branch: "master"
         ),
         .package(
