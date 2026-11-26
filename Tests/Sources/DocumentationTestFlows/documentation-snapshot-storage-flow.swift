@@ -413,11 +413,48 @@ private func makeDocumentationStorageSnapshot(
                             ]
                         ),
                         .image(
-                            asset: .init(
-                                rawValue: "diagram"
+                            source: .asset(
+                                .init(
+                                    rawValue: "diagram"
+                                )
                             ),
                             alt: "A diagram."
                         ),
+                        .figure(
+                            anchor: .init(
+                                rawValue: "photo"
+                            ),
+                            content: .image(
+                                source: .external(
+                                    "https://example.com/photo.jpg"
+                                ),
+                                alt: "A photo."
+                            ),
+                            caption: [
+                                .text("A caption."),
+                            ]
+                        ),
+                        .quote(
+                            .paragraph(
+                                [
+                                    .text("Quoted."),
+                                ]
+                            ),
+                            attribution: [
+                                .text("Someone"),
+                            ]
+                        ),
+                        .verse(
+                            [
+                                [
+                                    .text("first line"),
+                                ],
+                                [
+                                    .text("    indented"),
+                                ],
+                            ]
+                        ),
+                        .rule,
                         .definitions(
                             [
                                 .init(

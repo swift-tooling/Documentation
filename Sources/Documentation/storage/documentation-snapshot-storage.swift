@@ -946,6 +946,8 @@ private struct DocumentationStructuredContentRecord:
     let listing: String?
     let target: String?
     let key: String?
+    /// An image's external URL (an asset image stores `asset`).
+    let url: String?
 
     init(
         kind: String,
@@ -962,7 +964,8 @@ private struct DocumentationStructuredContentRecord:
         alt: String? = nil,
         listing: String? = nil,
         target: String? = nil,
-        key: String? = nil
+        key: String? = nil,
+        url: String? = nil
     ) {
         self.kind = kind
         self.children = children
@@ -979,6 +982,7 @@ private struct DocumentationStructuredContentRecord:
         self.listing = listing
         self.target = target
         self.key = key
+        self.url = url
     }
 
     init(
@@ -1012,14 +1016,19 @@ private struct DocumentationStructuredContentRecord:
                 source: source
             )
 
-        case .quote(let content):
+        case .quote(let content, let attribution):
             self.init(
                 kind: "quote",
                 children: [
                     .init(
                         content
                     ),
-                ]
+                ],
+                title: attribution?.map {
+                    .init(
+                        $0
+                    )
+                }
             )
 
         case .list(let style, let items):
@@ -1084,11 +1093,57 @@ private struct DocumentationStructuredContentRecord:
                 anchor: anchor?.rawValue
             )
 
-        case .image(let asset, let alt):
+        case .image(let source, let alt):
+            switch source {
+            case .asset(let asset):
+                self.init(
+                    kind: "image",
+                    asset: asset.rawValue,
+                    alt: alt
+                )
+
+            case .external(let url):
+                self.init(
+                    kind: "image",
+                    alt: alt,
+                    url: url
+                )
+            }
+
+        case .figure(let anchor, let content, let caption):
             self.init(
-                kind: "image",
-                asset: asset.rawValue,
-                alt: alt
+                kind: "figure",
+                children: [
+                    .init(
+                        content
+                    ),
+                ],
+                title: caption?.map {
+                    .init(
+                        $0
+                    )
+                },
+                anchor: anchor?.rawValue
+            )
+
+        case .verse(let lines):
+            self.init(
+                kind: "verse",
+                children: lines.map { line in
+                    .init(
+                        kind: "line",
+                        inline: line.map {
+                            .init(
+                                $0
+                            )
+                        }
+                    )
+                }
+            )
+
+        case .rule:
+            self.init(
+                kind: "rule"
             )
 
         case .definitions(let definitions):
@@ -1186,7 +1241,10 @@ private struct DocumentationStructuredContentRecord:
             }
 
             return .quote(
-                try content.semantic()
+                try content.semantic(),
+                attribution: try title?.map {
+                    try $0.semantic()
+                }
             )
 
         case "list":
@@ -1291,19 +1349,81 @@ private struct DocumentationStructuredContentRecord:
             )
 
         case "image":
-            guard let asset, let alt else {
+            guard let alt else {
                 throw DocumentationSnapshotStorageError
                     .invalidStructuredContentShape(
-                        "image requires asset and alt"
+                        "image requires alt"
                     )
             }
 
-            return .image(
-                asset: StructuredContent.AssetKey(
-                    rawValue: asset
-                ),
-                alt: alt
+            switch (asset, url) {
+            case (let asset?, nil):
+                return .image(
+                    source: .asset(
+                        StructuredContent.AssetKey(
+                            rawValue: asset
+                        )
+                    ),
+                    alt: alt
+                )
+
+            case (nil, let url?):
+                return .image(
+                    source: .external(
+                        url
+                    ),
+                    alt: alt
+                )
+
+            default:
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "image requires either asset or url"
+                    )
+            }
+
+        case "figure":
+            guard
+                let children,
+                children.count == 1,
+                let content = children.first
+            else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "figure requires exactly one child"
+                    )
+            }
+
+            return .figure(
+                anchor: anchor.map {
+                    StructuredContent.AnchorKey(
+                        rawValue: $0
+                    )
+                },
+                content: try content.semantic(),
+                caption: try title?.map {
+                    try $0.semantic()
+                }
             )
+
+        case "verse":
+            return .verse(
+                try (children ?? []).map { line in
+                    guard line.kind == "line" else {
+                        throw DocumentationSnapshotStorageError
+                            .invalidStructuredContentShape(
+                                "verse children must be lines"
+                            )
+                    }
+
+                    return try (line.inline ?? []).map {
+                        try $0.semantic()
+                    }
+                }
+            )
+
+        case "rule":
+            return .rule
 
         case "definitions":
             return .definitions(
