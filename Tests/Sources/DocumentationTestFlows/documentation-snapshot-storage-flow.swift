@@ -455,6 +455,39 @@ private func makeDocumentationStorageSnapshot(
                             ]
                         ),
                         .rule,
+                        .paragraph(
+                            [
+                                .noteReference(
+                                    number: 1,
+                                    anchor: .init(
+                                        rawValue: "ref-key"
+                                    )
+                                ),
+                            ]
+                        ),
+                        .notes(
+                            [
+                                .init(
+                                    anchor: .init(
+                                        rawValue: "ref-key"
+                                    ),
+                                    pointers: [1, 3],
+                                    content: .paragraph(
+                                        [
+                                            .text("An entry."),
+                                        ]
+                                    ),
+                                    uses: [
+                                        .init(
+                                            pointers: [3],
+                                            locators: [
+                                                .init(.page, "12"),
+                                            ]
+                                        ),
+                                    ]
+                                ),
+                            ]
+                        ),
                         .definitions(
                             [
                                 .init(

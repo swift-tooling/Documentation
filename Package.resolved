@@ -52,7 +52,7 @@
       "location" : "https://github.com/swift-dsl/DSL.git",
       "state" : {
         "branch" : "master",
-        "revision" : "d6c5c62eef57fed529d68fb970ef38e226ba0f64"
+        "revision" : "c6827fa7b79f9a6aa7a8313abeed5c31bcb35923"
       }
     },
     {
@@ -61,7 +61,7 @@
       "location" : "https://github.com/swift-lco/Errors.git",
       "state" : {
         "branch" : "master",
-        "revision" : "bd29066eccb8425d7a69d52f386a573916f5f9b0"
+        "revision" : "c0555ee1f867ae71029b6ee06380337887131fe2"
       }
     },
     {
@@ -196,7 +196,7 @@
       "location" : "https://github.com/swift-langs/Parsers.git",
       "state" : {
         "branch" : "master",
-        "revision" : "dcc2f0522e78c6ee0fdef6b0a6e08515d5466797"
+        "revision" : "a0625b6b54741ca123728a28691a7049a8eaba38"
       }
     },
     {
@@ -286,7 +286,7 @@
       "location" : "https://github.com/swift-lco/Reporting.git",
       "state" : {
         "branch" : "master",
-        "revision" : "e7d0de6d5a3daff2a9003033a634119b1fe6d45e"
+        "revision" : "073ae9021b5e606684bf35e1bfa1dd2ee393106c"
       }
     },
     {
@@ -367,7 +367,7 @@
       "location" : "https://github.com/swift-lco/Terminal.git",
       "state" : {
         "branch" : "master",
-        "revision" : "40cc24228736f9b63da285a2de5838905501c97a"
+        "revision" : "04281d4fac282e9b7ca7498750fd66c2347d695c"
       }
     },
     {

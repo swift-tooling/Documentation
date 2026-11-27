@@ -948,6 +948,9 @@ private struct DocumentationStructuredContentRecord:
     let key: String?
     /// An image's external URL (an asset image stores `asset`).
     let url: String?
+    /// A note's or note use's occurrence numbers.
+    let pointers: [Int]?
+    let locators: [ReferenceLocator]?
 
     init(
         kind: String,
@@ -965,7 +968,9 @@ private struct DocumentationStructuredContentRecord:
         listing: String? = nil,
         target: String? = nil,
         key: String? = nil,
-        url: String? = nil
+        url: String? = nil,
+        pointers: [Int]? = nil,
+        locators: [ReferenceLocator]? = nil
     ) {
         self.kind = kind
         self.children = children
@@ -983,6 +988,8 @@ private struct DocumentationStructuredContentRecord:
         self.target = target
         self.key = key
         self.url = url
+        self.pointers = pointers
+        self.locators = locators
     }
 
     init(
@@ -1183,6 +1190,25 @@ private struct DocumentationStructuredContentRecord:
             self.init(
                 kind: "listing",
                 listing: name
+            )
+
+        case .notes(let notes):
+            self.init(
+                kind: "notes",
+                children: notes.map { note in
+                    .init(
+                        kind: "note",
+                        children: [.init(note.content)] + note.uses.map {
+                            .init(
+                                kind: "use",
+                                pointers: $0.pointers,
+                                locators: $0.locators
+                            )
+                        },
+                        anchor: note.anchor.rawValue,
+                        pointers: note.pointers
+                    )
+                }
             )
 
         case .native(let target, let key, let fallback):
@@ -1472,6 +1498,43 @@ private struct DocumentationStructuredContentRecord:
                     )
             }
 
+        case "notes":
+            return .notes(
+                try (children ?? []).map { note in
+                    guard
+                        note.kind == "note",
+                        let anchor = note.anchor,
+                        let pointers = note.pointers,
+                        let content = note.children?.first
+                    else {
+                        throw DocumentationSnapshotStorageError
+                            .invalidStructuredContentShape(
+                                "note requires anchor, pointers and content"
+                            )
+                    }
+
+                    return StructuredContent.Note(
+                        anchor: .init(rawValue: anchor),
+                        pointers: pointers,
+                        content: try content.semantic(),
+                        uses: try (note.children ?? []).dropFirst().map { use in
+                            guard
+                                use.kind == "use",
+                                let pointers = use.pointers,
+                                let locators = use.locators
+                            else {
+                                throw DocumentationSnapshotStorageError
+                                    .invalidStructuredContentShape(
+                                        "note use requires pointers and locators"
+                                    )
+                            }
+
+                            return .init(pointers: pointers, locators: locators)
+                        }
+                    )
+                }
+            )
+
         case "native":
             guard
                 let target,
@@ -1516,6 +1579,7 @@ private struct DocumentationStructuredContentInlineRecord:
     let key: String?
     let locators: [ReferenceLocator]?
     let blocks: [DocumentationStructuredContentRecord]?
+    let number: Int?
 
     init(
         kind: String,
@@ -1525,7 +1589,8 @@ private struct DocumentationStructuredContentInlineRecord:
         anchor: String? = nil,
         key: String? = nil,
         locators: [ReferenceLocator]? = nil,
-        blocks: [DocumentationStructuredContentRecord]? = nil
+        blocks: [DocumentationStructuredContentRecord]? = nil,
+        number: Int? = nil
     ) {
         self.kind = kind
         self.text = text
@@ -1535,6 +1600,7 @@ private struct DocumentationStructuredContentInlineRecord:
         self.key = key
         self.locators = locators
         self.blocks = blocks
+        self.number = number
     }
 
     init(
@@ -1631,6 +1697,13 @@ private struct DocumentationStructuredContentInlineRecord:
                     ),
                 ]
             )
+
+        case .noteReference(let number, let anchor):
+            self.init(
+                kind: "noteReference",
+                anchor: anchor.rawValue,
+                number: number
+            )
         }
     }
 
@@ -1713,6 +1786,19 @@ private struct DocumentationStructuredContentInlineRecord:
 
             return .footnote(
                 try content.semantic()
+            )
+
+        case "noteReference":
+            guard let number, let anchor else {
+                throw DocumentationSnapshotStorageError
+                    .invalidStructuredContentShape(
+                        "note reference requires number and anchor"
+                    )
+            }
+
+            return .noteReference(
+                number: number,
+                anchor: .init(rawValue: anchor)
             )
 
         default:
